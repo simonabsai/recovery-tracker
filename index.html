@@ -227,26 +227,51 @@
         
         .tabs {
             display: flex;
-            gap: 10px;
+            gap: 5px;
             margin-bottom: 20px;
             border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
         }
         
         .tab {
-            padding: 10px 20px;
+            padding: 12px 8px;
             background: none;
             border: none;
             color: #666;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 24px;
             font-weight: 600;
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
+            flex: 1 1 auto;
+            min-width: 60px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .tab-label {
+            font-size: 10px;
+            font-weight: 500;
         }
         
         .tab.active {
             color: #667eea;
             border-bottom-color: #667eea;
+        }
+        
+        @media (max-width: 600px) {
+            .tab {
+                font-size: 22px;
+                padding: 10px 5px;
+                min-width: 50px;
+            }
+            
+            .tab-label {
+                font-size: 9px;
+            }
         }
         
         .tab-content {
