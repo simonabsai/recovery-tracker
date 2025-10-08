@@ -1060,10 +1060,10 @@
             }
             
             localStorage.setItem('recoveryEntries', JSON.stringify(entries));
-            await syncToGitHub(entries);
+            const syncResult = await syncToGitHub(entries);
             
             const successMsg = document.getElementById('successMessage');
-            successMsg.style.display = 'block';
+            successMsg.textContent = syncResult ? 'Entry saved & synced to cloud!' : 'Entry saved locally only (cloud sync failed)';
             setTimeout(() => {
                 successMsg.style.display = 'none';
             }, 3000);
