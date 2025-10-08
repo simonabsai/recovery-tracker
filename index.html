@@ -842,8 +842,11 @@
                 <div class="section-title">Your Entries</div>
                 <div id="historyList"></div>
             </div>
-            <button class="btn btn-secondary" onclick="exportData()">Export All Data</button>
-            <button class="btn btn-secondary" onclick="clearData()">Clear All Data</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
+            <button class="btn btn-secondary" onclick="exportData()">📤 Export All Data</button>
+            <button class="btn" onclick="manualSync()" id="syncButton" style="margin-top: 0; display: none;">🔄 Cloud Sync</button>
+            <button class="btn btn-secondary" onclick="clearData()">🗑️ Clear All Data</button>
         </div>
         
         <div id="chartTab" class="tab-content">
@@ -858,7 +861,12 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
+        // CONFIGURATION - Update these after deploying to Netlify
+        const SYNC_ENABLED = false; // Set to true after Netlify setup
+        const NETLIFY_FUNCTION_URL = ''; // e.g., 'https://your-site.netlify.app/.netlify/functions/sync'
+        
         let currentEntryDate = new Date();
+        let isSyncing = false;
         
         const today = new Date();
         document.getElementById('currentDate').textContent = today.toLocaleDateString('en-GB', { 
@@ -877,6 +885,98 @@
             currentEntryDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
             loadEntryForDate(currentEntryDate);
         });
+        
+        // CLOUD SYNC FUNCTIONS
+        async function syncWithCloud() {
+            if (!SYNC_ENABLED || !NETLIFY_FUNCTION_URL || isSyncing) {
+                return false;
+            }
+            
+            isSyncing = true;
+            
+            try {
+                // Fetch cloud data
+                const fetchResponse = await fetch(NETLIFY_FUNCTION_URL, {
+                    method: 'GET'
+                });
+                
+                if (!fetchResponse.ok) {
+                    throw new Error('Failed to fetch cloud data');
+                }
+                
+                const { data: cloudData } = await fetchResponse.json();
+                const localData = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
+                
+                // Merge data
+                const merged = {};
+                
+                localData.forEach(entry => {
+                    const key = new Date(entry.date).toDateString();
+                    merged[key] = entry;
+                });
+                
+                cloudData.forEach(entry => {
+                    const key = new Date(entry.date).toDateString();
+                    if (!merged[key] || new Date(entry.date) > new Date(merged[key].date)) {
+                        merged[key] = entry;
+                    }
+                });
+                
+                const finalData = Object.values(merged);
+                
+                // Save to local
+                localStorage.setItem('recoveryEntries', JSON.stringify(finalData));
+                
+                // Upload to cloud
+                const uploadResponse = await fetch(NETLIFY_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data: finalData })
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload data');
+                }
+                
+                console.log('✅ Cloud sync successful');
+                isSyncing = false;
+                return true;
+                
+            } catch (error) {
+                console.error('Cloud sync error:', error);
+                isSyncing = false;
+                return false;
+            }
+        }
+        
+        async function manualSync() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Syncing...';
+            btn.disabled = true;
+            
+            const success = await syncWithCloud();
+            
+            if (success) {
+                btn.innerHTML = '✅ Synced!';
+                btn.style.background = 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)';
+                displayHistory();
+                if (document.getElementById('calendarTab').classList.contains('active')) {
+                    displayCalendar();
+                }
+            } else {
+                btn.innerHTML = '❌ Sync Failed';
+                btn.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
+            }
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.style.background = '';
+            }, 3000);
+        }
         
         function updateValue(id) {
             const slider = document.getElementById(id);
@@ -908,7 +1008,7 @@
             });
         });
         
-        function saveEntry() {
+        async function saveEntry() {
             const entry = {
                 date: currentEntryDate.toISOString(),
                 sleep: document.getElementById('sleep').value,
@@ -937,8 +1037,22 @@
             
             localStorage.setItem('recoveryEntries', JSON.stringify(entries));
             
+            let syncSuccess = false;
+            if (SYNC_ENABLED) {
+                syncSuccess = await syncWithCloud();
+            }
+            
             const successMsg = document.getElementById('successMessage');
-            successMsg.textContent = '✅ Entry saved!';
+            if (syncSuccess) {
+                successMsg.textContent = '✅ Saved & synced to cloud!';
+                successMsg.style.background = '#4caf50';
+            } else if (SYNC_ENABLED) {
+                successMsg.textContent = '⚠️ Saved locally (cloud sync failed)';
+                successMsg.style.background = '#ff9800';
+            } else {
+                successMsg.textContent = '✅ Entry saved!';
+                successMsg.style.background = '#4caf50';
+            }
             successMsg.style.display = 'block';
             
             setTimeout(() => {
@@ -1101,6 +1215,54 @@
             });
         }
         
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (!Array.isArray(importedData)) {
+                        alert('Invalid file format. Please select a valid backup file.');
+                        return;
+                    }
+                    
+                    const existingData = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
+                    const merged = {};
+                    
+                    existingData.forEach(entry => {
+                        const key = new Date(entry.date).toDateString();
+                        merged[key] = entry;
+                    });
+                    
+                    importedData.forEach(entry => {
+                        const key = new Date(entry.date).toDateString();
+                        if (!merged[key] || new Date(entry.date) > new Date(merged[key].date)) {
+                            merged[key] = entry;
+                        }
+                    });
+                    
+                    const finalData = Object.values(merged);
+                    localStorage.setItem('recoveryEntries', JSON.stringify(finalData));
+                    
+                    displayHistory();
+                    if (document.getElementById('calendarTab').classList.contains('active')) {
+                        displayCalendar();
+                    }
+                    
+                    alert(`✅ Import successful! ${importedData.length} entries processed, ${finalData.length} total entries.`);
+                    
+                } catch (error) {
+                    alert('Error reading file. Please make sure it\'s a valid backup file.');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+        
         function exportData() {
             const entries = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
             const dataStr = JSON.stringify(entries, null, 2);
@@ -1108,7 +1270,8 @@
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'recovery-tracker-backup.json';
+            const timestamp = new Date().toISOString().split('T')[0];
+            link.download = `recovery-tracker-backup-${timestamp}.json`;
             link.click();
         }
         
@@ -1258,7 +1421,11 @@
             document.getElementById('logTab').classList.add('active');
         }
         
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
+            if (SYNC_ENABLED) {
+                document.getElementById('syncButton').style.display = 'block';
+                await syncWithCloud();
+            }
             loadEntryForDate(currentEntryDate);
         });
     </script>
