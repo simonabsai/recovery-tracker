@@ -842,8 +842,21 @@
                 <div class="section-title">Your Entries</div>
                 <div id="historyList"></div>
             </div>
+            
+            <div class="section-title" style="margin-top: 30px;">Import / Export</div>
+            
+            <!-- File Upload Method -->
             <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" style="display: none;" onchange="importData(event)">
-            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📁 Import from File</button>
+            
+            <!-- Paste Method for iOS Chrome -->
+            <button class="btn btn-secondary" onclick="togglePasteImport()">📋 Paste & Import (iOS)</button>
+            <div id="pasteImportArea" style="display: none; margin-top: 15px;">
+                <textarea id="pasteInput" placeholder="1. Open backup file in Google Drive&#10;2. Copy all content (Select All → Copy)&#10;3. Paste here&#10;4. Click Import below" style="width: 100%; min-height: 150px; font-family: monospace; font-size: 12px;"></textarea>
+                <button class="btn" onclick="importFromPaste()" style="margin-top: 10px;">✅ Import Pasted Data</button>
+                <button class="btn btn-secondary" onclick="togglePasteImport()" style="margin-top: 10px;">❌ Cancel</button>
+            </div>
+            
             <button class="btn btn-secondary" onclick="exportData('json')">📤 Export (JSON)</button>
             <button class="btn btn-secondary" onclick="exportData('txt')">📤 Export (TXT for iOS)</button>
             <button class="btn" onclick="manualSync()" id="syncButton" style="margin-top: 0; display: none;">🔄 Cloud Sync</button>
@@ -1217,51 +1230,169 @@
         }
         
         function importData(event) {
+            console.log('Import triggered');
             const file = event.target.files[0];
-            if (!file) return;
+            
+            if (!file) {
+                console.log('No file selected');
+                alert('No file selected. Please try again.');
+                return;
+            }
+            
+            console.log('File selected:', file.name, file.type, file.size);
             
             const reader = new FileReader();
+            
+            reader.onerror = function(e) {
+                console.error('FileReader error:', e);
+                alert('Error reading file. Please try again.');
+            };
+            
             reader.onload = function(e) {
+                console.log('File loaded, parsing...');
                 try {
-                    const importedData = JSON.parse(e.target.result);
+                    const content = e.target.result;
+                    console.log('File content length:', content.length);
+                    
+                    const importedData = JSON.parse(content);
+                    console.log('Parsed data:', importedData.length, 'entries');
                     
                     if (!Array.isArray(importedData)) {
-                        alert('Invalid file format. Please select a valid backup file.');
+                        alert('❌ Invalid file format. File must contain an array of entries.');
+                        return;
+                    }
+                    
+                    if (importedData.length === 0) {
+                        alert('⚠️ File is empty. No entries to import.');
                         return;
                     }
                     
                     const existingData = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
+                    console.log('Existing entries:', existingData.length);
+                    
                     const merged = {};
                     
+                    // Add existing data
                     existingData.forEach(entry => {
                         const key = new Date(entry.date).toDateString();
                         merged[key] = entry;
                     });
                     
+                    // Merge imported data
+                    let newCount = 0;
+                    let updatedCount = 0;
+                    
                     importedData.forEach(entry => {
                         const key = new Date(entry.date).toDateString();
-                        if (!merged[key] || new Date(entry.date) > new Date(merged[key].date)) {
+                        if (!merged[key]) {
+                            newCount++;
+                            merged[key] = entry;
+                        } else if (new Date(entry.date) > new Date(merged[key].date)) {
+                            updatedCount++;
                             merged[key] = entry;
                         }
                     });
                     
                     const finalData = Object.values(merged);
                     localStorage.setItem('recoveryEntries', JSON.stringify(finalData));
+                    console.log('Import complete. Final entries:', finalData.length);
                     
+                    // Refresh displays
                     displayHistory();
                     if (document.getElementById('calendarTab').classList.contains('active')) {
                         displayCalendar();
                     }
+                    if (document.getElementById('chartTab').classList.contains('active')) {
+                        updateChart();
+                    }
                     
-                    alert(`✅ Import successful! ${importedData.length} entries processed, ${finalData.length} total entries.`);
+                    alert(`✅ Import successful!\n\nNew entries: ${newCount}\nUpdated entries: ${updatedCount}\nTotal entries: ${finalData.length}`);
                     
                 } catch (error) {
-                    alert('Error reading file. Please make sure it\'s a valid backup file.');
-                    console.error(error);
+                    console.error('Parse error:', error);
+                    alert(`❌ Error reading file: ${error.message}\n\nPlease make sure it's a valid backup file.`);
                 }
             };
+            
             reader.readAsText(file);
             event.target.value = '';
+        }
+        
+        function togglePasteImport() {
+            const pasteArea = document.getElementById('pasteImportArea');
+            const pasteInput = document.getElementById('pasteInput');
+            
+            if (pasteArea.style.display === 'none') {
+                pasteArea.style.display = 'block';
+                pasteInput.value = '';
+                pasteInput.focus();
+            } else {
+                pasteArea.style.display = 'none';
+                pasteInput.value = '';
+            }
+        }
+        
+        function importFromPaste() {
+            const pastedText = document.getElementById('pasteInput').value.trim();
+            
+            if (!pastedText) {
+                alert('❌ Please paste your backup data first');
+                return;
+            }
+            
+            try {
+                const importedData = JSON.parse(pastedText);
+                
+                if (!Array.isArray(importedData)) {
+                    alert('❌ Invalid format. Please paste the entire content of your backup file.');
+                    return;
+                }
+                
+                if (importedData.length === 0) {
+                    alert('⚠️ No entries found in pasted data.');
+                    return;
+                }
+                
+                const existingData = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
+                const merged = {};
+                
+                existingData.forEach(entry => {
+                    const key = new Date(entry.date).toDateString();
+                    merged[key] = entry;
+                });
+                
+                let newCount = 0;
+                let updatedCount = 0;
+                
+                importedData.forEach(entry => {
+                    const key = new Date(entry.date).toDateString();
+                    if (!merged[key]) {
+                        newCount++;
+                        merged[key] = entry;
+                    } else if (new Date(entry.date) > new Date(merged[key].date)) {
+                        updatedCount++;
+                        merged[key] = entry;
+                    }
+                });
+                
+                const finalData = Object.values(merged);
+                localStorage.setItem('recoveryEntries', JSON.stringify(finalData));
+                
+                displayHistory();
+                if (document.getElementById('calendarTab').classList.contains('active')) {
+                    displayCalendar();
+                }
+                if (document.getElementById('chartTab').classList.contains('active')) {
+                    updateChart();
+                }
+                
+                togglePasteImport();
+                
+                alert(`✅ Import successful!\n\nNew entries: ${newCount}\nUpdated entries: ${updatedCount}\nTotal entries: ${finalData.length}`);
+                
+            } catch (error) {
+                alert(`❌ Error: ${error.message}\n\nPlease make sure you copied the entire file content correctly.`);
+            }
         }
         
         function exportData(format = 'json') {
