@@ -38,6 +38,21 @@
             width: 50px;
             height: 50px;
             flex-shrink: 0;
+            object-fit: contain;
+        }
+        
+        .logo-fallback {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
         }
         
         h1 {
@@ -573,53 +588,53 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="absai-logo.png" alt="ABSAI Logo" class="logo">
+            <img src="absai-logo.png" alt="ABSAI Logo" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="logo-fallback" style="display:none;">AB</div>
             <h1>Recovery Tracker</h1>
         </div>
         <div class="date-display" id="currentDate"></div>
         
         <div class="tabs">
             <button class="tab active" data-tab="log">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
                 <span class="tab-label">Log</span>
             </button>
             <button class="tab" data-tab="protocol">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path>
                     <rect x="9" y="3" width="6" height="4" rx="1"></rect>
-                    <path d="M9 12h6"></path>
-                    <path d="M9 16h6"></path>
                 </svg>
                 <span class="tab-label">Protocol</span>
             </button>
             <button class="tab" data-tab="calendar">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
-                    <rect x="7" y="14" width="3" height="3"></rect>
                 </svg>
                 <span class="tab-label">Calendar</span>
             </button>
             <button class="tab" data-tab="history">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <span class="tab-label">History</span>
             </button>
             <button class="tab" data-tab="chart">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                     <polyline points="17 6 23 6 23 12"></polyline>
                 </svg>
                 <span class="tab-label">Progress</span>
             </button>
-        </div><div id="logTab" class="tab-content active">
+        </div>
+
+        <div id="logTab" class="tab-content active">
             <div class="date-selector">
                 <label for="entryDate">Entry Date:</label>
                 <input type="date" id="entryDate" class="date-input">
@@ -754,10 +769,6 @@
                             </li>
                         </ul>
                     </div>
-                    
-                    <div class="protocol-item">
-                        <strong>Then:</strong> Complete your morning check-in in Daily Log tab
-                    </div>
                 </div>
                 
                 <div class="protocol-block exercise">
@@ -772,23 +783,6 @@
                             <li>See yourself moving without pain or tension</li>
                         </ul>
                     </div>
-                    
-                    <div class="protocol-item">
-                        <strong>Step 2: Box Breathing (5 rounds)</strong>
-                        <ul>
-                            <li>4-4-4-4 breathing pattern</li>
-                            <li>Calm your nervous system before movement</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="protocol-item">
-                        <strong>Step 3: Modified Exercise</strong>
-                        <ul>
-                            <li>Do exercise at 70% of usual intensity/volume</li>
-                            <li>Listen to your body</li>
-                            <li>Stop if it feels wrong</li>
-                        </ul>
-                    </div>
                 </div>
                 
                 <div class="protocol-block evening">
@@ -801,24 +795,6 @@
                             <li>Use Headspace app</li>
                             <li>Choose a beginner or basics meditation</li>
                             <li>Focus on breath, let thoughts pass</li>
-                            <li>Don't judge yourself when mind wanders</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="protocol-item">
-                        <strong>2. Vagal Exercises (2 minutes)</strong>
-                        <ul>
-                            <li><strong>Humming:</strong> Hum while brushing teeth or just before bed</li>
-                            <li><strong>Cold water:</strong> Splash cold water on face for 30 seconds</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="protocol-item">
-                        <strong>3. Sleep Prep</strong>
-                        <ul>
-                            <li>No screens after this routine</li>
-                            <li>Cool, dark room</li>
-                            <li>Consistent bedtime</li>
                         </ul>
                     </div>
                 </div>
@@ -826,11 +802,9 @@
                 <div class="protocol-tips">
                     <h3>💡 Key Reminders</h3>
                     <ul>
-                        <li><strong>Consistency over perfection:</strong> Do what you can daily, even if rushed</li>
-                        <li><strong>Track everything:</strong> Use Daily Log to note which practices you completed</li>
-                        <li><strong>Watch for patterns:</strong> Note which exercises trigger 2-3 day flares</li>
-                        <li><strong>Total time commitment:</strong> ~20 minutes per day</li>
-                        <li><strong>Timeline:</strong> Expect to see changes in 4-6 weeks with consistency</li>
+                        <li><strong>Consistency over perfection:</strong> Do what you can daily</li>
+                        <li><strong>Track everything:</strong> Use Daily Log to note practices</li>
+                        <li><strong>Timeline:</strong> Expect changes in 4-6 weeks with consistency</li>
                     </ul>
                 </div>
             </div>
@@ -858,10 +832,6 @@
                         <div class="legend-box empty"></div>
                         <span>No entry</span>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-box today"></div>
-                        <span>Today</span>
-                    </div>
                 </div>
                 <div class="streak-counter" id="streakCounter"></div>
             </div>
@@ -872,9 +842,8 @@
                 <div class="section-title">Your Entries</div>
                 <div id="historyList"></div>
             </div>
-            <button class="btn" onclick="manualSync()" style="margin-top: 0;">🔄 Sync Now</button>
             <button class="btn btn-secondary" onclick="exportData()">Export All Data</button>
-            <button class="btn btn-secondary" onclick="clearData()" style="margin-top: 10px;">Clear All Data</button>
+            <button class="btn btn-secondary" onclick="clearData()">Clear All Data</button>
         </div>
         
         <div id="chartTab" class="tab-content">
@@ -889,11 +858,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
-        const GITHUB_TOKEN = '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';
-        const GIST_ID = 'bd8811042aaa9a6ff896634004b4f862';
-        
         let currentEntryDate = new Date();
-        let isSyncing = false;
         
         const today = new Date();
         document.getElementById('currentDate').textContent = today.toLocaleDateString('en-GB', { 
@@ -912,76 +877,6 @@
             currentEntryDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
             loadEntryForDate(currentEntryDate);
         });
-        
-        async function syncData() {
-            if (isSyncing) {
-                return false;
-            }
-            isSyncing = true;
-            
-            try {
-                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const gist = await response.json();
-                const cloudData = JSON.parse(gist.files['recovery-data.json'].content);
-                const localData = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
-                
-                const merged = {};
-                
-                localData.forEach(entry => {
-                    const key = new Date(entry.date).toDateString();
-                    merged[key] = entry;
-                });
-                
-                cloudData.forEach(entry => {
-                    const key = new Date(entry.date).toDateString();
-                    if (!merged[key] || new Date(entry.date) > new Date(merged[key].date)) {
-                        merged[key] = entry;
-                    }
-                });
-                
-                const finalData = Object.values(merged);
-                localStorage.setItem('recoveryEntries', JSON.stringify(finalData));
-                
-                const updateResponse = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        files: {
-                            'recovery-data.json': {
-                                content: JSON.stringify(finalData, null, 2)
-                            }
-                        }
-                    })
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error(`Upload failed: ${updateResponse.status}`);
-                }
-                
-                console.log('✅ Synced:', finalData.length, 'entries');
-                isSyncing = false;
-                return true;
-                
-            } catch (error) {
-                console.error('Sync error:', error);
-                isSyncing = false;
-                return false;
-            }
-        }
         
         function updateValue(id) {
             const slider = document.getElementById(id);
@@ -1013,7 +908,7 @@
             });
         });
         
-        async function saveEntry() {
+        function saveEntry() {
             const entry = {
                 date: currentEntryDate.toISOString(),
                 sleep: document.getElementById('sleep').value,
@@ -1042,54 +937,17 @@
             
             localStorage.setItem('recoveryEntries', JSON.stringify(entries));
             
-            const syncSuccess = await syncData();
-            
             const successMsg = document.getElementById('successMessage');
-            if (syncSuccess) {
-                successMsg.textContent = '✅ Saved & synced!';
-                successMsg.style.background = '#4caf50';
-            } else {
-                successMsg.textContent = '⚠️ Saved locally (sync failed)';
-                successMsg.style.background = '#ff9800';
-            }
+            successMsg.textContent = '✅ Entry saved!';
             successMsg.style.display = 'block';
             
             setTimeout(() => {
                 successMsg.style.display = 'none';
-                successMsg.textContent = 'Entry saved successfully!';
-                successMsg.style.background = '#4caf50';
             }, 3000);
             
             if (document.getElementById('calendarTab').classList.contains('active')) {
                 displayCalendar();
             }
-        }
-        
-        async function manualSync() {
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ Syncing...';
-            btn.disabled = true;
-            
-            const success = await syncData();
-            
-            if (success) {
-                btn.innerHTML = '✅ Synced!';
-                btn.style.background = 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)';
-                displayHistory();
-                if (document.getElementById('calendarTab').classList.contains('active')) {
-                    displayCalendar();
-                }
-            } else {
-                btn.innerHTML = '❌ Sync Failed';
-                btn.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
-            }
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                btn.style.background = '';
-            }, 3000);
         }
         
         function loadEntryForDate(date) {
@@ -1254,10 +1112,9 @@
             link.click();
         }
         
-        async function clearData() {
+        function clearData() {
             if (confirm('Are you sure? This cannot be undone.')) {
                 localStorage.removeItem('recoveryEntries');
-                await syncData();
                 displayHistory();
                 alert('Data cleared.');
             }
@@ -1401,8 +1258,7 @@
             document.getElementById('logTab').classList.add('active');
         }
         
-        window.addEventListener('load', async () => {
-            await syncData();
+        window.addEventListener('load', () => {
             loadEntryForDate(currentEntryDate);
         });
     </script>
