@@ -570,14 +570,14 @@
         <div class="date-display" id="currentDate"></div>
         
         <div class="tabs">
-            <button class="tab active" onclick="showTab('log')">
+            <button class="tab active" data-tab="log">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
                 <span class="tab-label">Log</span>
             </button>
-            <button class="tab" onclick="showTab('protocol')">
+            <button class="tab" data-tab="protocol">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path>
                     <rect x="9" y="3" width="6" height="4" rx="1"></rect>
@@ -586,7 +586,7 @@
                 </svg>
                 <span class="tab-label">Protocol</span>
             </button>
-            <button class="tab" onclick="showTab('calendar')">
+            <button class="tab" data-tab="calendar">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -596,14 +596,14 @@
                 </svg>
                 <span class="tab-label">Calendar</span>
             </button>
-            <button class="tab" onclick="showTab('history')">
+            <button class="tab" data-tab="history">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <span class="tab-label">History</span>
             </button>
-            <button class="tab" onclick="showTab('chart')">
+            <button class="tab" data-tab="chart">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                     <polyline points="17 6 23 6 23 12"></polyline>
@@ -877,9 +877,8 @@
         </div>
     </div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script><script>
-        <script>
-        // GitHub Configuration
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
         const GITHUB_TOKEN = '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';
         const GITHUB_USER = 'simonabsai';
         const GITHUB_REPO = 'recovery-tracker';
@@ -905,7 +904,6 @@
             loadEntryForDate(currentEntryDate);
         });
         
-        // GitHub Sync Functions
         async function syncFromGitHub() {
             if (isSyncing) return;
             isSyncing = true;
@@ -929,12 +927,10 @@
                     localStorage.setItem('githubSha', data.sha);
                     console.log('✅ Synced from GitHub');
                 } else if (response.status === 404) {
-                    console.log('📝 No cloud data yet, will create on first save');
-                } else {
-                    console.error('Sync error:', response.status);
+                    console.log('📝 No cloud data yet');
                 }
             } catch (error) {
-                console.error('Failed to sync from GitHub:', error);
+                console.error('Sync error:', error);
             } finally {
                 isSyncing = false;
             }
@@ -974,11 +970,9 @@
                     const data = await response.json();
                     localStorage.setItem('githubSha', data.content.sha);
                     console.log('✅ Synced to GitHub');
-                } else {
-                    console.error('Upload error:', response.status);
                 }
             } catch (error) {
-                console.error('Failed to sync to GitHub:', error);
+                console.error('Upload error:', error);
             } finally {
                 isSyncing = false;
             }
@@ -990,29 +984,29 @@
             display.textContent = slider.value;
         }
         
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                document.getElementById(tabName + 'Tab').classList.add('active');
+                this.classList.add('active');
+                
+                if (tabName === 'chart') {
+                    updateChart();
+                } else if (tabName === 'history') {
+                    displayHistory();
+                } else if (tabName === 'calendar') {
+                    displayCalendar();
+                }
             });
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            event.target.classList.add('active');
-            
-            if (tabName === 'chart') {
-                updateChart();
-            }
-            
-            if (tabName === 'history') {
-                displayHistory();
-            }
-            
-            if (tabName === 'calendar') {
-                displayCalendar();
-            }
-        }
+        });
         
         async function saveEntry() {
             const entry = {
@@ -1042,8 +1036,6 @@
             }
             
             localStorage.setItem('recoveryEntries', JSON.stringify(entries));
-            
-            // Sync to GitHub
             await syncToGitHub(entries);
             
             const successMsg = document.getElementById('successMessage');
@@ -1140,7 +1132,7 @@
             const entries = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
             
             if (entries.length === 0) {
-                document.querySelector('.chart-container').innerHTML = '<div class="empty-state">No data to display yet. Start logging to see your progress!</div>';
+                document.querySelector('.chart-container').innerHTML = '<div class="empty-state">No data yet. Start logging!</div>';
                 return;
             }
             
@@ -1191,20 +1183,15 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
                     plugins: {
                         legend: {
-                            display: true,
                             position: 'bottom'
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 10,
-                            ticks: {
-                                stepSize: 1
-                            }
+                            max: 10
                         }
                     }
                 }
@@ -1223,11 +1210,11 @@
         }
         
         async function clearData() {
-            if (confirm('Are you sure you want to delete all your entries? This cannot be undone.')) {
+            if (confirm('Are you sure? This cannot be undone.')) {
                 localStorage.removeItem('recoveryEntries');
                 await syncToGitHub([]);
                 displayHistory();
-                alert('All data cleared.');
+                alert('Data cleared.');
             }
         }
         
@@ -1306,7 +1293,6 @@
             }
             
             document.getElementById('calendarGrid').innerHTML = calendarHTML;
-            
             calculateStreak(entries);
         }
         
@@ -1330,7 +1316,7 @@
             
             if (daysDiff > 1) {
                 document.getElementById('streakCounter').innerHTML = 
-                    '<span class="streak-number">0</span>Your streak ended. Start a new one today!';
+                    '<span class="streak-number">0</span>Streak ended. Start again!';
                 return;
             }
             
@@ -1352,28 +1338,23 @@
             const streakText = streak === 1 ? 'day' : 'days';
             const emoji = streak >= 7 ? '🔥' : streak >= 3 ? '⭐' : '✨';
             document.getElementById('streakCounter').innerHTML = 
-                `${emoji} <span class="streak-number">${streak}</span>${streak} ${streakText} streak! Keep going!`;
+                `${emoji} <span class="streak-number">${streak}</span>${streak} ${streakText} streak!`;
         }
         
         function selectCalendarDay(year, month, day) {
             const selectedDate = new Date(year, month, day);
-            
             currentEntryDate = selectedDate;
-            
             document.getElementById('entryDate').valueAsDate = selectedDate;
-            
             loadEntryForDate(selectedDate);
             
-            showTab('log');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelector('.tab[onclick*="log"]').classList.add('active');
+            document.querySelector('.tab[data-tab="log"]').classList.add('active');
+            document.getElementById('logTab').classList.add('active');
         }
         
-        // Initialize: Sync from GitHub on load
-        window.addEventListener('load', async () => {
+        window.addEventListener('load', async() => {
             await syncFromGitHub();
             loadEntryForDate(currentEntryDate);
         });
