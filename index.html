@@ -1060,13 +1060,30 @@
             }
             
             localStorage.setItem('recoveryEntries', JSON.stringify(entries));
-            const syncResult = await syncToGitHub(entries);
+            
+            // Try to sync to GitHub
+            let syncSuccess = false;
+            try {
+                syncSuccess = await syncToGitHub(entries);
+            } catch (error) {
+                console.error('Sync failed:', error);
+            }
             
             const successMsg = document.getElementById('successMessage');
-            successMsg.textContent = syncResult ? 'Entry saved & synced to cloud!' : 'Entry saved locally only (cloud sync failed)';
+            if (syncSuccess) {
+                successMsg.textContent = '✅ Saved & synced to cloud!';
+                successMsg.style.background = '#4caf50';
+            } else {
+                successMsg.textContent = '⚠️ Saved locally (cloud sync failed - check console)';
+                successMsg.style.background = '#ff9800';
+            }
+            successMsg.style.display = 'block';
+            
             setTimeout(() => {
                 successMsg.style.display = 'none';
-            }, 3000);
+                successMsg.textContent = 'Entry saved successfully!';
+                successMsg.style.background = '#4caf50';
+            }, 5000);
             
             if (document.getElementById('calendarTab').classList.contains('active')) {
                 displayCalendar();
