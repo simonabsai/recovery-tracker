@@ -879,6 +879,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
+        <script>
         const GITHUB_TOKEN = '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';
         const GITHUB_USER = 'simonabsai';
         const GITHUB_REPO = 'recovery-tracker';
@@ -896,11 +897,12 @@
         });
         
         const dateInput = document.getElementById('entryDate');
-        dateInput.valueAsDate = currentEntryDate;
+        dateInput.value = currentEntryDate.toISOString().split('T')[0];
         dateInput.max = new Date().toISOString().split('T')[0];
         
         dateInput.addEventListener('change', function() {
-            currentEntryDate = new Date(this.value + 'T12:00:00');
+            const parts = this.value.split('-');
+            currentEntryDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
             loadEntryForDate(currentEntryDate);
         });
         
@@ -923,14 +925,35 @@
                     const data = await response.json();
                     const content = atob(data.content);
                     const entries = JSON.parse(content);
-                    localStorage.setItem('recoveryEntries', JSON.stringify(entries));
+                    
+                    // Merge with local data (keep newest)
+                    const localEntries = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
+                    const merged = {};
+                    
+                    localEntries.forEach(e => {
+                        const key = new Date(e.date).toDateString();
+                        merged[key] = e;
+                    });
+                    
+                    entries.forEach(e => {
+                        const key = new Date(e.date).toDateString();
+                        if (!merged[key] || new Date(e.date) > new Date(merged[key].date)) {
+                            merged[key] = e;
+                        }
+                    });
+                    
+                    const finalEntries = Object.values(merged);
+                    localStorage.setItem('recoveryEntries', JSON.stringify(finalEntries));
                     localStorage.setItem('githubSha', data.sha);
-                    console.log('✅ Synced from GitHub');
+                    console.log('✅ Synced from GitHub -', finalEntries.length, 'entries');
+                    return true;
                 } else if (response.status === 404) {
                     console.log('📝 No cloud data yet');
+                    return false;
                 }
             } catch (error) {
                 console.error('Sync error:', error);
+                return false;
             } finally {
                 isSyncing = false;
             }
@@ -970,9 +993,11 @@
                     const data = await response.json();
                     localStorage.setItem('githubSha', data.content.sha);
                     console.log('✅ Synced to GitHub');
+                    return true;
                 }
             } catch (error) {
                 console.error('Upload error:', error);
+                return false;
             } finally {
                 isSyncing = false;
             }
@@ -1053,6 +1078,9 @@
             const entries = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
             const dateString = date.toDateString();
             const entry = entries.find(e => new Date(e.date).toDateString() === dateString);
+            
+            // Update date picker to match
+            dateInput.value = date.toISOString().split('T')[0];
             
             if (entry) {
                 document.getElementById('sleep').value = entry.sleep;
@@ -1342,9 +1370,8 @@
         }
         
         function selectCalendarDay(year, month, day) {
-            const selectedDate = new Date(year, month, day);
+            const selectedDate = new Date(year, month, day, 12, 0, 0);
             currentEntryDate = selectedDate;
-            document.getElementById('entryDate').valueAsDate = selectedDate;
             loadEntryForDate(selectedDate);
             
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1354,7 +1381,7 @@
             document.getElementById('logTab').classList.add('active');
         }
         
-        window.addEventListener('load', async() => {
+        window.addEventListener('load', async () => {
             await syncFromGitHub();
             loadEntryForDate(currentEntryDate);
         });
