@@ -842,9 +842,10 @@
                 <div class="section-title">Your Entries</div>
                 <div id="historyList"></div>
             </div>
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+            <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" style="display: none;" onchange="importData(event)">
             <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
-            <button class="btn btn-secondary" onclick="exportData()">📤 Export All Data</button>
+            <button class="btn btn-secondary" onclick="exportData('json')">📤 Export (JSON)</button>
+            <button class="btn btn-secondary" onclick="exportData('txt')">📤 Export (TXT for iOS)</button>
             <button class="btn" onclick="manualSync()" id="syncButton" style="margin-top: 0; display: none;">🔄 Cloud Sync</button>
             <button class="btn btn-secondary" onclick="clearData()">🗑️ Clear All Data</button>
         </div>
@@ -1263,16 +1264,29 @@
             event.target.value = '';
         }
         
-        function exportData() {
+        function exportData(format = 'json') {
             const entries = JSON.parse(localStorage.getItem('recoveryEntries') || '[]');
             const dataStr = JSON.stringify(entries, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
+            const timestamp = new Date().toISOString().split('T')[0];
+            
+            let blob, filename;
+            
+            if (format === 'txt') {
+                // Export as .txt for iOS compatibility
+                blob = new Blob([dataStr], { type: 'text/plain' });
+                filename = `recovery-tracker-backup-${timestamp}.txt`;
+            } else {
+                // Export as .json
+                blob = new Blob([dataStr], { type: 'application/json' });
+                filename = `recovery-tracker-backup-${timestamp}.json`;
+            }
+            
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const timestamp = new Date().toISOString().split('T')[0];
-            link.download = `recovery-tracker-backup-${timestamp}.json`;
+            link.download = filename;
             link.click();
+            URL.revokeObjectURL(url);
         }
         
         function clearData() {
